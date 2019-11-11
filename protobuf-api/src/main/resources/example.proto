@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "example.api";
+
+package example.api;
+
+message State {
+    uint64 events = 1;
+    uint64 acc = 2;
+}
+
+message Increment {
+    uint64 v = 1;
+}
+
+message Done {
+}
+
+message Empty {
+}
+
+service CounterService {
+    rpc Inc(Increment) returns (Done);
+    rpc Incs (stream Increment) returns (stream Done);
+    rpc Get(Empty) returns (State);
+}

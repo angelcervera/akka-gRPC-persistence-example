@@ -28,7 +28,7 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>target/simplexspatial-dev.log</file>
+        <file>target/server.log</file>
         <encoder>
             <pattern>[%date{ISO8601}] [%level] [%logger] [%thread] [%X{akkaSource}] - %msg%n</pattern>
         </encoder>
@@ -40,7 +40,7 @@
         <appender-ref ref="FILE" />
     </appender>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="ASYNC"/>
     </root>

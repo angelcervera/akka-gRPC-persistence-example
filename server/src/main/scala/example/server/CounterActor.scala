@@ -1,13 +1,13 @@
-package example
+package example.server
 
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
-import example.CounterActor.{Event, GetState, Increment, Incremented, State}
 
 object CounterActor {
   def props(id: String): Props = Props(new CounterActor(id))
 
   case class State(events: Long, acc: Long)
+  case class Done()
 
   trait Command
 
@@ -22,29 +22,30 @@ object CounterActor {
 
 class CounterActor(id: String)
   extends PersistentActor
-  with ActorLogging {
+    with ActorLogging {
 
-  var state = State(0,0)
+  var state = CounterActor.State(0,0)
 
   override def persistenceId: String = id
 
   override def receiveRecover: Receive = {
-    case event: Event => applyEvent(event)
+    case event: CounterActor.Event => applyEvent(event)
   }
 
   override def receiveCommand: Receive = {
-    case GetState =>
+    case CounterActor.GetState =>
       sender() ! state
 
-    case Increment(v) =>
-      persist(Incremented(v)) { incremented =>
+    case CounterActor.Increment(v) =>
+      persist(CounterActor.Incremented(v)) { incremented =>
         applyEvent(incremented)
+        sender() ! CounterActor.Done()
       }
   }
 
-  private def applyEvent(event: Event) = event match {
-    case Incremented(v) =>
-      state = State(state.events + 1, state.acc + v)
+  private def applyEvent(event: CounterActor.Event) = event match {
+    case CounterActor.Incremented(v) =>
+      state = CounterActor.State(state.events + 1, state.acc + v)
   }
 
 }

@@ -1,8 +1,7 @@
-package example
+package example.server
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
-import example.CounterActor.{GetState, Increment, State}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 class CounterActorSpec
@@ -15,15 +14,16 @@ class CounterActorSpec
   "CounterActor" should {
     "Start with zero" in {
       val counter = system.actorOf(CounterActor.props("test_zero"))
-      counter ! GetState
-      expectMsg(State(0,0))
+      counter ! CounterActor.GetState
+      expectMsg(CounterActor.State(0,0))
     }
 
     "Increment and count events processed" in {
-      val counter = system.actorOf(CounterActor.props("test_zero"))
-      counter ! Increment(10)
-      counter ! GetState
-      expectMsg(State(1,10))
+      val counter = system.actorOf(CounterActor.props("test_inc"))
+      counter ! CounterActor.Increment(10)
+      counter ! CounterActor.GetState
+      expectMsg(CounterActor.Done())
+      expectMsg(CounterActor.State(1,10))
     }
   }
 
