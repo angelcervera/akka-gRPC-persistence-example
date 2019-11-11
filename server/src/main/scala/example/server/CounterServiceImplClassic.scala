@@ -11,26 +11,26 @@ import example.api
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CounterServiceImpl(counter: ActorRef)(implicit mat: Materializer) extends api.CounterService {
+class CounterServiceImplClassic(counter: ActorRef)(implicit mat: Materializer) extends api.CounterService {
 
   import mat.executionContext
 
   implicit val timeout = Timeout(15 minutes)
 
   override def inc(in: api.Increment): Future[api.Done] =
-    (counter ? CounterActor.Increment(in.v))
-      .mapTo[CounterActor.Done]
+    (counter ? CounterActorClassic.Increment(in.v))
+      .mapTo[CounterActorClassic.Done]
       .map(_ => api.Done())
 
   override def get(in: api.Empty): Future[api.State] =
-    (counter ? CounterActor.GetState)
-      .mapTo[CounterActor.State]
+    (counter ? CounterActorClassic.GetState)
+      .mapTo[CounterActorClassic.State]
       .map(s => api.State(s.events, s.acc))
 
   override def incs(in: Source[api.Increment, NotUsed]): Source[api.Done, NotUsed] =
     in
-      .map(i => CounterActor.Increment(i.v))
-      .ask[CounterActor.Done](counter)
+      .map(i => CounterActorClassic.Increment(i.v))
+      .ask[CounterActorClassic.Done](counter)
       .map(_ => api.Done())
 
 }

@@ -2,7 +2,7 @@ import sbt.Keys.libraryDependencies
 
 name := "akka-gRPC-persistence-example"
 
-lazy val akkaVersion = "2.5.26"
+lazy val akkaVersion = "2.6.0"
 lazy val scalatestVersion = "3.0.8"
 lazy val leveldbVersion = "1.8"
 lazy val betterFilesVersion = "3.8.0"
@@ -32,13 +32,13 @@ lazy val server = (project in file("server"))
     javaAgents += "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % "2.0.9" % "runtime;test",
     mainClass in assembly := Some("example.server.Main"),
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
-      "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+      "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
+      "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion,
       "com.typesafe.akka" %% "akka-discovery" % akkaVersion, // Forcing version imported from gRPC
       "org.fusesource.leveldbjni" % "leveldbjni-all" % leveldbVersion,
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ) ++ Seq(
-      "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
+      "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion,
       "org.scalatest" %% "scalatest" % scalatestVersion,
     ).map(_ % "test")
   )
