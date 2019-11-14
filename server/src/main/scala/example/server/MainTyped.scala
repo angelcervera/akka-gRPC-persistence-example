@@ -1,9 +1,7 @@
 package example.server
 
-import akka.actor
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ActorSystem, Scheduler}
+import akka.actor.typed.Scheduler
 import akka.grpc.scaladsl.ServiceHandler
 import akka.http.scaladsl.UseHttp2.Always
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
@@ -13,7 +11,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import example.CounterActorTyped
 import example.api.CounterServiceHandler
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object MainTyped {
@@ -23,45 +22,45 @@ object MainTyped {
       .parseString("akka.http.server.preview.enable-http2 = on")
       .withFallback(defaultConfig)
 
-    val system = ActorSystem[akka.Done](Behaviors.setup[akka.Done] { ctx =>
-      implicit val untypedSystem: actor.ActorSystem = ctx.system.toClassic
-      implicit val materializer: ActorMaterializer = ActorMaterializer()(ctx.system.toClassic)
-      implicit val ec: ExecutionContextExecutor = ctx.system.executionContext
-      implicit val scheduler: Scheduler = ctx.system.scheduler
+    // Akka Classic implicits
+    implicit val system = akka.actor.ActorSystem("CounterServer", config)
+    implicit val materializer = ActorMaterializer()
+    implicit val executionContext: ExecutionContext = system.dispatcher
 
-      val counterActor = ctx.spawn(CounterActorTyped("CounterActorId"), "CounterActor")
+    // Akka Typed implicits
+    implicit val typedSystem = system.toTyped
+    implicit val scheduler: Scheduler = typedSystem.scheduler
 
-      val counterServiceHandler = CounterServiceHandler.partial(new CounterServiceImplTyped(counterActor))
-      // val anotherServiceHandler = ....
+    val counterActor = system.spawn(CounterActorTyped("CounterActorId"), "CounterActor")
 
-      val serviceHandlers: HttpRequest => Future[HttpResponse] =
-        ServiceHandler.concatOrNotFound(
-          counterServiceHandler
-          /*, anotherServiceHandler*/
-        )
+    val counterServiceHandler = CounterServiceHandler.partial(new CounterServiceImplTyped(counterActor))
+    // val anotherServiceHandler = ....
 
-      val serverBinding = Http().bindAndHandleAsync(
-        serviceHandlers,
-        interface = config.getString("server.interface"),
-        port = config.getInt("server.port"),
-        connectionContext = HttpConnectionContext(http2 = Always)
+    val serviceHandlers: HttpRequest => Future[HttpResponse] =
+      ServiceHandler.concatOrNotFound(
+        counterServiceHandler
+        /*, anotherServiceHandler*/
       )
 
-      serverBinding.onComplete {
-        case Success(bound) =>
-          println(
-            s"Counter server typed online at http://${bound.localAddress.getHostString}:${bound.localAddress.getPort}/"
-          )
-        case Failure(e) =>
-          Console.err.println(s"Counter server typed can not start!")
-          e.printStackTrace()
-          ctx.self ! akka.Done
-      }
+    val serverBinding = Http().bindAndHandleAsync(
+      serviceHandlers,
+      interface = config.getString("server.interface"),
+      port = config.getInt("server.port"),
+      connectionContext = HttpConnectionContext(http2 = Always)
+    )
 
-      Behaviors.receiveMessage {
-        case akka.Done =>
-          Behaviors.stopped
-      }
-    }, "SimplexSpatialServer")
+    serverBinding.onComplete {
+      case Success(bound) =>
+        println(
+          s"Counter server typed online at http://${bound.localAddress.getHostString}:${bound.localAddress.getPort}/"
+        )
+      case Failure(e) =>
+        Console.err.println(s"Counter server typed can not start!")
+        e.printStackTrace()
+        system.terminate()
+    }
+
+    Await.result(system.whenTerminated, Duration.Inf)
   }
+
 }
