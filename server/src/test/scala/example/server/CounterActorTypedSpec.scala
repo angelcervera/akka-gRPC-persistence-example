@@ -22,7 +22,8 @@ class CounterActorTypedSpec
     "Increment and count events processed" in {
       val counter = testKit.spawn(CounterActorTyped("test_zero"), "test_inc")
       val probe = testKit.createTestProbe[CounterActorTyped.State]()
-      counter ! CounterActorTyped.Increment(10)
+      val response = testKit.createTestProbe[CounterActorTyped.Done]()
+      counter ! CounterActorTyped.Increment(10, response.ref)
       counter ! CounterActorTyped.GetState(probe.ref)
       probe.expectMessage(CounterActorTyped.State(1,10))
     }
@@ -32,8 +33,11 @@ class CounterActorTypedSpec
     "recover" in {
       implicit val timeout = Timeout(3 seconds)
 
+
+      val response = testKit.createTestProbe[CounterActorTyped.Done]()
+
       val counter = testKit.spawn(CounterActorTyped("testing_recovering"), "testing_initializing")
-      1 to 100 foreach (_ => counter ! CounterActorTyped.Increment(10))
+      1 to 100 foreach (_ => counter ! CounterActorTyped.Increment(10, response.ref ))
 
       val probe = testKit.createTestProbe[CounterActorTyped.State]()
       counter ! CounterActorTyped.GetState(probe.ref)
