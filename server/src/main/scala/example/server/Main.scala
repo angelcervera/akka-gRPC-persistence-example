@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 
 
 object Main extends App {
-  val defaultConfig = ConfigFactory.defaultApplication()
+  val defaultConfig = ConfigFactory.load()
   defaultConfig.getString("server.style") match {
     case "typed" => MainTyped.run(defaultConfig)
     case "classic" => MainClassic.run(defaultConfig)
