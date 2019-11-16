@@ -1,6 +1,6 @@
 # Migrating to AKKA 2.6 Typed
 
-I'm starting to migrate few projects to AKKA 2.6 from AKKA 2.*. The idea
+I'm starting to migrate a few projects to AKKA 2.6 from AKKA 2.*. The idea
 is to start using the new (and looks like now more mature) Akka Typed.
 
 So I will use this repo to try the migration in a small project before
@@ -19,18 +19,18 @@ Parts that took more time:
 
 # Services description
 Remind that the idea of this service is not to implement something cool
-but something to proof how to migrate and the differences between
+but something to prove how to migrate and the differences between
 *Classic* and *Typed* style.
 
 So the functionality is really simple. It is a **Counter** service. It
-is going to keep the count in the service and the client will stimulate
-the counter and the number of times that events has been created.
+is going to keep the counter in the service along with the number of
+events created. The client will stimulate the counter.
 
 So this is the list of services to expose:
 - **Inc** will increment the counter the X times and increment one time
   the events counter.
 - **Incs** like **Inc** service but in a streaming way.
-- **Get** wil return the counter and the number of events generated.
+- **Get** will return the counter and the number of events generated.
 
 The definition is in the [submodule protobuf-api](protobuf-api/src/main/resources/example.proto)
 
@@ -79,10 +79,10 @@ using typesafe config configuration system.
 - *akka.grpc.client.example.api.CounterService.port* = Server port.
   Default 8080
 
-Three different behaviors depending of the number of parameters:
+Three different behaviors depending on the number of parameters:
 - No parameters: Return the counter and the number of events generated.
 - One parameter: Increment the counter X times.
-- Two parameters: Execute the previous one as stream, calling the
+- Two parameters: Execute the previous one as a stream, calling the
   service one time every value in the range.
   
 Increment 10 with defaults
@@ -134,3 +134,4 @@ In the future, I will use this project to do add:
 
 - [ ] Clustering 
 - [ ] Sharding
+
