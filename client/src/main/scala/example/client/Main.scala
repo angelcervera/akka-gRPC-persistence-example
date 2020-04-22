@@ -19,22 +19,21 @@ object Main extends App {
       |""".stripMargin
 
   implicit val sys = ActorSystem("CounterClient")
-  implicit val mat = ActorMaterializer()
-  implicit val ec = sys.dispatcher
+  import sys.dispatcher
 
   val clientSettings = GrpcClientSettings.fromConfig(CounterService.name)
   val client: CounterService = CounterServiceClient(clientSettings)
 
   args match {
-    case Array() => printState
-    case Array(value) => increment(value.toInt)
+    case Array()         => printState
+    case Array(value)    => increment(value.toInt)
     case Array(from, to) => incrementStream(from.toInt.to(to.toInt))
-    case _ => println(help)
+    case _               => println(help)
   }
 
-
   private def increment(i: Long) =
-    client.inc(Increment(i))
+    client
+      .inc(Increment(i))
       .onComplete {
         case Success(_) =>
           println("Successfully incremented.")
@@ -46,10 +45,13 @@ object Main extends App {
       }
 
   private def printState() =
-    client.get(Empty())
+    client
+      .get(Empty())
       .onComplete {
         case Success(state) =>
-          println(s"Current state: Accumulator [${state.acc}] / Events executed [${state.events}].")
+          println(
+            s"Current state: Accumulator [${state.acc}] / Events executed [${state.events}]."
+          )
           sys.terminate
         case Failure(e) =>
           sys.log.error("Error printing: {}", e.getMessage)

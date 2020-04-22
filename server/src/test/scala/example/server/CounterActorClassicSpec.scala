@@ -2,12 +2,14 @@ package example.server
 
 import akka.actor.{ActorSystem, Kill}
 import akka.testkit.{ImplicitSender, TestKit}
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 class CounterActorClassicSpec
-  extends TestKit(ActorSystem("CounterActorSpec"))
+    extends TestKit(ActorSystem("CounterActorSpec"))
     with ImplicitSender
-    with WordSpecLike
+    with AnyWordSpecLike
     with Matchers
     with BeforeAndAfterAll {
 
@@ -15,7 +17,7 @@ class CounterActorClassicSpec
     "Start with zero" in {
       val counter = system.actorOf(CounterActorClassic.props("test_zero"))
       counter ! CounterActorClassic.GetState
-      expectMsg(CounterActorClassic.State(0,0))
+      expectMsg(CounterActorClassic.State(0, 0))
     }
 
     "Increment and count events processed" in {
@@ -23,13 +25,16 @@ class CounterActorClassicSpec
       counter ! CounterActorClassic.Increment(10)
       counter ! CounterActorClassic.GetState
       expectMsg(CounterActorClassic.Done())
-      expectMsg(CounterActorClassic.State(1,10))
+      expectMsg(CounterActorClassic.State(1, 10))
     }
   }
 
   "Testing the AKKA Persistence" should {
     "recover" in {
-      val counter = system.actorOf(CounterActorClassic.props("testing_recovering"), "testing_initializing")
+      val counter = system.actorOf(
+        CounterActorClassic.props("testing_recovering"),
+        "testing_initializing"
+      )
       1 to 100 foreach (_ => counter ! CounterActorClassic.Increment(10))
 
       counter ! CounterActorClassic.GetState
@@ -38,7 +43,10 @@ class CounterActorClassicSpec
 
       counter ! Kill
 
-      val counterRecovered = system.actorOf(CounterActorClassic.props("testing_recovering"), "testing_recovered")
+      val counterRecovered = system.actorOf(
+        CounterActorClassic.props("testing_recovering"),
+        "testing_recovered"
+      )
       counterRecovered ! CounterActorClassic.GetState
       expectMsg(CounterActorClassic.State(100, 1000))
     }

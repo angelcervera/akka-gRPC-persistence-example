@@ -19,21 +19,31 @@ class CounterServiceImplTyped(counter: ActorRef[CounterActorTyped.Command])(
 ) extends api.CounterService {
 
   // FIXME: Temporal timeout for the example
-  implicit val timeout = Timeout(1 minutes)
+  implicit val timeout = Timeout(1.minutes)
 
   override def inc(in: api.Increment): Future[api.Done] =
     counter
-      .ask[CounterActorTyped.Done](replyTo => CounterActorTyped.Increment(in.v, replyTo))
+      .ask[CounterActorTyped.Done](
+        replyTo => CounterActorTyped.Increment(in.v, replyTo)
+      )
       .map(_ => api.Done())
 
   override def get(in: api.Empty): Future[api.State] =
     counter
-      .ask[CounterActorTyped.State](replyTo => CounterActorTyped.GetState(replyTo))
+      .ask[CounterActorTyped.State](
+        replyTo => CounterActorTyped.GetState(replyTo)
+      )
       .map(s => api.State(s.events, s.acc))
 
-  override def incs(in: Source[api.Increment, NotUsed]): Source[api.Done, NotUsed] =
-    in
-      .via(ActorFlow.ask(counter)((inc, replyTo: ActorRef[CounterActorTyped.Done]) => CounterActorTyped.Increment(inc.v, replyTo)))
+  override def incs(
+    in: Source[api.Increment, NotUsed]
+  ): Source[api.Done, NotUsed] =
+    in.via(
+        ActorFlow.ask(counter)(
+          (inc, replyTo: ActorRef[CounterActorTyped.Done]) =>
+            CounterActorTyped.Increment(inc.v, replyTo)
+        )
+      )
       .map(_ => api.Done())
 
 }
