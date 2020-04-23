@@ -42,10 +42,12 @@ suffix *Classic and *Typed in all files.
 # Running
 From the project root:
 
-Assembly the project.
 ```
 sbt clean universal:packageZipTarball
 ```
+
+Inside of every `target/universal` submodule you will find a tgz file with all necessary to run the app.
+
 ## Server side
 
 The server is using typesafe config configuration system, so it is
