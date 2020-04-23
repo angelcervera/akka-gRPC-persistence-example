@@ -1,22 +1,22 @@
 import sbt.Keys.libraryDependencies
+import NativePackagerHelper._
 
 name := "akka-gRPC-persistence-example"
 
-lazy val akkaVersion = "2.6.0"
-lazy val scalatestVersion = "3.0.8"
+lazy val akkaVersion = "2.6.4"
+lazy val scalatestVersion = "3.1.1"
 lazy val leveldbVersion = "1.8"
 lazy val betterFilesVersion = "3.8.0"
+lazy val logbackVersion = "1.2.3"
 lazy val typeSafeConfig = "1.4.0"
 
 lazy val commonSettings = Seq(
-  version := "0.0.1",
+  version := "0.0.2",
   fork := true,
-  scalaVersion := "2.12.10",
-  test in assembly := {}
+  scalaVersion := "2.13.1"
 )
 
 lazy val root = Project("root", file("."))
-  .disablePlugins(sbtassembly.AssemblyPlugin)
   .aggregate(protobufApi, server, client)
 
 lazy val protobufApi = (project in file("protobuf-api"))
@@ -25,8 +25,7 @@ lazy val protobufApi = (project in file("protobuf-api"))
   )
 
 lazy val server = (project in file("server"))
-  .enablePlugins(AkkaGrpcPlugin)
-  .enablePlugins(JavaAgent) // ALPN agent
+  .enablePlugins(AkkaGrpcPlugin, JavaAgent, JavaAppPackaging)
   .settings(
     PB.protoSources in Compile += (resourceDirectory in(protobufApi, Compile)).value,
     akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
@@ -35,7 +34,9 @@ lazy val server = (project in file("server"))
   .settings(
     commonSettings,
     javaAgents += "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % "2.0.9" % "runtime;test",
-    mainClass in assembly := Some("example.server.Main"),
+    mainClass in (Compile, packageBin) := Some(
+      "example.server.Main"
+    ),
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
       "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion,
@@ -51,17 +52,19 @@ lazy val server = (project in file("server"))
   .dependsOn(protobufApi)
 
 lazy val client = (project in file("client"))
-  .enablePlugins(AkkaGrpcPlugin)
+  .enablePlugins(AkkaGrpcPlugin, JavaAppPackaging)
   .settings(
     PB.protoSources in Compile += (resourceDirectory in(protobufApi, Compile)).value,
     akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client)
   )
   .settings(
     commonSettings,
-    mainClass in assembly := Some("example.client.Main"),
+    mainClass in (Compile, packageBin) := Some(
+      "example.client.Main"
+    ),
     libraryDependencies ++= Seq(
       "com.typesafe" % "config" % typeSafeConfig,
-      "ch.qos.logback" % "logback-classic" % "1.2.3"
+      "ch.qos.logback" % "logback-classic" % logbackVersion
     )
   )
   .dependsOn(protobufApi)

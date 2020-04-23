@@ -1,18 +1,16 @@
 package example.server
 
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.Scheduler
+import akka.actor.typed.{ActorSystem, Scheduler}
 import akka.grpc.scaladsl.ServiceHandler
-import akka.http.scaladsl.UseHttp2.Always
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.{Http, HttpConnectionContext}
-import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import example.CounterActorTyped
 import example.api.CounterServiceHandler
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
 object MainTyped {
@@ -22,18 +20,13 @@ object MainTyped {
       .parseString("akka.http.server.preview.enable-http2 = on")
       .withFallback(defaultConfig)
 
-    // Akka Classic implicits
-    implicit val system = akka.actor.ActorSystem("CounterServer", config)
-    implicit val materializer = ActorMaterializer()
-    implicit val executionContext: ExecutionContext = system.dispatcher
+    implicit val actor =
+      ActorSystem(CounterActorTyped("CounterActorId"), "CounterActor", config)
+    import actor.executionContext
+    implicit val scheduler: Scheduler = actor.scheduler
 
-    // Akka Typed implicits
-    implicit val typedSystem = system.toTyped
-    implicit val scheduler: Scheduler = typedSystem.scheduler
-
-    val counterActor = system.spawn(CounterActorTyped("CounterActorId"), "CounterActor")
-
-    val counterServiceHandler = CounterServiceHandler.partial(new CounterServiceImplTyped(counterActor))
+    val counterServiceHandler =
+      CounterServiceHandler.partial(new CounterServiceImplTyped(actor))
     // val anotherServiceHandler = ....
 
     val serviceHandlers: HttpRequest => Future[HttpResponse] =
@@ -42,12 +35,13 @@ object MainTyped {
         /*, anotherServiceHandler*/
       )
 
-    val serverBinding = Http().bindAndHandleAsync(
-      serviceHandlers,
-      interface = config.getString("server.interface"),
-      port = config.getInt("server.port"),
-      connectionContext = HttpConnectionContext(http2 = Always)
-    )
+    val serverBinding =
+      Http()(system = actor.toClassic).bindAndHandleAsync(
+        serviceHandlers,
+        interface = config.getString("server.interface"),
+        port = config.getInt("server.port"),
+        connectionContext = HttpConnectionContext()
+      )
 
     serverBinding.onComplete {
       case Success(bound) =>
@@ -57,10 +51,10 @@ object MainTyped {
       case Failure(e) =>
         Console.err.println(s"Counter server typed can not start!")
         e.printStackTrace()
-        system.terminate()
+        actor.terminate()
     }
 
-    Await.result(system.whenTerminated, Duration.Inf)
+    Await.result(actor.whenTerminated, Duration.Inf)
   }
 
 }

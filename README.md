@@ -44,7 +44,7 @@ From the project root:
 
 Assembly the project.
 ```
-sbt assembly
+sbt clean universal:packageZipTarball
 ```
 ## Server side
 
@@ -55,19 +55,9 @@ possible to override all configuration:
   from everywhere.
 - server.port = Port listening. Default 8080 
 
-Running with defaults
+Running setting, for example, the server interface to listen:
 ```
-java -Dserver.interface=localhost -jar ./server/target/scala-2.12/server-assembly-0.0.1.jar
-```
-
-Running with customs parameters:
-```
-java \
-    -jar \
-    -Dserver.style=classic \
-    -Dserver.interface=localhost \
-    -Dserver.port=9090 \
-    ./server/target/scala-2.12/server-assembly-0.0.1.jar
+bin/server -Dserver.interface=localhost
 ```
 
 ## Client side
@@ -87,7 +77,7 @@ Three different behaviors depending on the number of parameters:
   
 Increment 10 with defaults
 ```
-java -jar ./client/target/scala-2.12/client-assembly-0.0.1.jar 10
+bin/client 10
 ```
 
 ## Example:
@@ -95,7 +85,7 @@ java -jar ./client/target/scala-2.12/client-assembly-0.0.1.jar 10
 In on terminal, execute the server:
 
 ```
-$ java -jar ./server/target/scala-2.12/server-assembly-0.0.1.jar
+$ bin/server
 [2019-11-16 17:14:23,252] [INFO] [akka.event.slf4j.Slf4jLogger] [CounterServer-akka.actor.default-dispatcher-6] [] - Slf4jLogger started
 [2019-11-16 17:14:23,366] [WARN] [akka.persistence.Persistence] [CounterServer-akka.actor.default-dispatcher-9] [Persistence(akka://CounterServer)] - No default snapshot store configured! To configure a default snapshot-store plugin set the `akka.persistence.snapshot-store.plugin` key. For details see 'reference.conf'
 Counter server typed online at http://0:0:0:0:0:0:0:0:8080/
@@ -105,16 +95,16 @@ Counter server typed online at http://0:0:0:0:0:0:0:0:8080/
 In other terminal, execute the client:
 
 ```
-$ java -jar ./client/target/scala-2.12/client-assembly-0.0.1.jar
+$ bin/client
 Current state: Accumulator [0] / Events executed [0].
 
-$ java -jar ./client/target/scala-2.12/client-assembly-0.0.1.jar 10
+$ bin/client 10
 Successfully incremented.
 
-$ java -jar ./client/target/scala-2.12/client-assembly-0.0.1.jar
+$ bin/client
 Current state: Accumulator [10] / Events executed [1].
 
-$ java -jar ./client/target/scala-2.12/client-assembly-0.0.1.jar 5 10
+$ bin/client 5 10
 Incremented Done()
 Incremented Done()
 Incremented Done()
@@ -123,7 +113,7 @@ Incremented Done()
 Incremented Done()
 Incremented range [Range 5 to 10].
 
-$ java -jar ./client/target/scala-2.12/client-assembly-0.0.1.jar
+$ bin/client
 Current state: Accumulator [55] / Events executed [7].
 
 ```
